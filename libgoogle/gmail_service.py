@@ -1,7 +1,13 @@
-"""
-"""
+""" GmailService supports
+        - listing messages based on query  
+        - getting message details
 
-# pip install --upgrade google-api-python-client
+    Prerequisites
+        pip install google-api-python-client
+
+    API Reference
+        https://developers.google.com/gmail/api/v1/reference/
+"""
 
 __author__ = 'sumeetsarkar4@gmail.com (Sumeet Sarkar)'
 
@@ -95,24 +101,14 @@ class GmailService:
         try:
             message = self.__service.users().messages().get(userId=user_id, id=msg_id,
                                                             format='raw').execute()
-            # print( 'Message snippet: %s' % message['snippet'].encode('ASCII'))
-            # MessageBody=[]
             mytext = ''
             msg_str = base64.urlsafe_b64decode(
                 message['raw'].encode('ASCII')).decode('UTF-8')
             mime_msg = email.message_from_string(msg_str)
             for parts in mime_msg.walk():
                 mime_msg.get_payload()
-                # print(parts.get_content_type())
-                # if parts.get_content_type() == 'application/xml':
-                #   mytext= base64.urlsafe_b64decode(parts.get_payload().encode('UTF-8'))
                 if parts.get_content_type() == 'text/plain':
                     mytext += parts.get_payload()
-                    # print(parts.get_payload())
-                    # myMSG=base64.urlsafe_b64decode(parts.get_payload().encode('UTF-8'))
-                    # MessageBody.append(myMSG)
-                    # with open('messages.json','w') as jsonfile:
-                    #   json.dump(MessageBody,jsonfile)
 
         except errors.HttpError as error:
             print('An error occurred: %s' % error)

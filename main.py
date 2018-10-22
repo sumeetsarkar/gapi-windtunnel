@@ -1,45 +1,22 @@
-"""Python gmail client
+""" Scrapes Daily Coding Problems from Gmail messages
 
-Usage:
-  $ python main.py
+    Prerequisites:
+        pip install google-api-python-client
+        pip install google_auth_oauthlib
+
+    Usage:
+        $ python main.py
 """
 
-# pip install --upgrade google-api-python-client
-# pip install google_auth_oauthlib
 
 __author__ = 'sumeetsarkar4@gmail.com (Sumeet Sarkar)'
 
 import sys
 
-from libgoogle.auth import GoogleAuthenticator
-from libgoogle import GmailService
+from libgoogle import GoogleAPIClient
 
 
-class GoogleAPIClient:
-
-    def __init__(self, clientIdPath, scopes):
-        self.__clientIdPath = clientIdPath
-        self.__scopes = scopes
-        self.__googleAuth = None
-        self.__gmailService = None
-
-    def authenticate(self, config):
-        self.__googleAuth = GoogleAuthenticator(
-            self.__clientIdPath, self.__scopes)
-        self.__googleAuth.initiate(config)
-        return self
-
-    def prepare_service(self, serviceName):
-        if self.__googleAuth is None or self.__googleAuth.credentials is None:
-            raise Exception('API Client not yet authenticated')
-        if serviceName == 'gmail':
-            if self.__gmailService is None:
-                self.__gmailService = GmailService(self.__googleAuth)
-            return self.__gmailService
-
-
-def scrape_daily_coding_problem(apiClient, argv):
-    service = apiClient.prepare_service('gmail')
+def scrape_daily_coding_problem(service, argv):
     messages = service.list_messages_matching_query(
         user_id='me',
         query='from:founders@dailycodingproblem.com',
@@ -47,27 +24,36 @@ def scrape_daily_coding_problem(apiClient, argv):
     )
     print('\n\nFound {} messages...\n\n'.format(len(messages)))
     print('--------------------------------------------------------------------------')
-    begStringLen = len(
+    beg_string_len = len(
         'Good morning! Here\'s your coding interview problem for today.')
-    endString = 'Upgrade to premium'
+    end_string = 'Upgrade to premium'
     for m in messages:
         message = service.get_mime_message('me', m['id'])
-        indexEnd = message.index(endString)
-        print(message[int(begStringLen): int(indexEnd)])
+        end_index = message.index(end_string)
+        print(message[int(beg_string_len): int(end_index)])
         print('--------------------------------------------------------------------------')
 
 
 def main(argv):
+    # Obtain client_id.json from Google API Console
+    # Please do not commit client_id.json
+    client_id = 'client_id.json'
+    # List the scopes for OAuth2.0 authorization
     scopes = [
         'https://mail.google.com/',
         'https://www.googleapis.com/auth/gmail.readonly',
     ]
-    apiClient = GoogleAPIClient('client_id.json', scopes)
-    apiClient.authenticate({
+    # Initialize API Client
+    api_client = GoogleAPIClient(client_id, scopes)
+    # Authenticate
+    api_client.authenticate({
         'host': 'localhost',
         'port': 9091,
     })
-    scrape_daily_coding_problem(apiClient, argv)
+    # Prepare the gmail service
+    gmail_service = api_client.prepare_service(GoogleAPIClient.SERVICE_GMAIL)
+    # Sample use case of scraping daily coding problems
+    scrape_daily_coding_problem(gmail_service, argv)
 
 
 if __name__ == '__main__':
